@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <title>Lecture en boucle d'un segment</title>
+    <script src="https://www.youtube.com/iframe_api"></script>
+  </head>
+  <body>
+    <!-- Conteneur pour le lecteur -->
+    <div id="player"></div>
+
+    <script>
+      // Définis tes temps en secondes
+      var t1 = 0; // temps de départ
+      var t2 = 253; // temps de fin
+
+      var player;
+      // Fonction appelée automatiquement par l'API YouTube quand elle est prête
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          height: '315',
+          width: '560',
+          videoId: 'Kmews-ePuyc', // Remplace VIDEO_ID par l'identifiant réel de la vidéo
+          playerVars: {
+            'autoplay': 1,
+            'controls': 1,
+            'start': t1,
+            'end': t2,
+            'rel': 0 // pour ne pas afficher de vidéos similaires à la fin
+          },
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      }
+
+      // Quand le joueur est prêt, démarre la vidéo
+      function onPlayerReady(event) {
+        event.target.playVideo();
+      }
+
+      // Contrôle de la lecture pour boucler le segment
+      function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.PLAYING) {
+          // Vérifie régulièrement l'instant de la vidéo
+          var checkInterval = setInterval(function () {
+            var currentTime = player.getCurrentTime();
+            if (currentTime >= t2) {
+              player.seekTo(t1);
+            }
+          }, 1000); // vérification toutes les 1 seconde
+        }
+      }
+    </script>
+  </body>
+</html>
