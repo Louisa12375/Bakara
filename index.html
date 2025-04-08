@@ -2,54 +2,114 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8">
-    <title>Lecture en boucle d'un segment</title>
+    <title>Lecteurs en boucle sur segments définis</title>
     <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+      .player-container {
+        margin-bottom: 20px;
+      }
+    </style>
   </head>
   <body>
-    <!-- Conteneur pour le lecteur -->
-    <div id="player"></div>
-
+    <!-- Partie 1 -->
+    <div class="player-container">
+      <h2>Partie 1</h2>
+      <div id="player1"></div>
+    </div>
+    
+    <!-- Partie 2 -->
+    <div class="player-container">
+      <h2>Partie 2</h2>
+      <div id="player2"></div>
+    </div>
+    
     <script>
-      // Définis tes temps en secondes
-      var t1 = 0; // temps de départ
-      var t2 = 253; // temps de fin
+      // Définition des segments (en secondes)
+      var t1_player1 = 0;    // Début du segment pour la Partie 1
+      var t2_player1 = 253;  // Fin du segment pour la Partie 1
 
-      var player;
-      // Fonction appelée automatiquement par l'API YouTube quand elle est prête
+      var t1_player2 = 254;  // Début du segment pour la Partie 2
+      var t2_player2 = 453;  // Fin du segment pour la Partie 2
+
+      var player1, player2;
+      var interval1 = null, interval2 = null;
+
+      // Cette fonction est appelée par l'API YouTube pour créer les deux lecteurs.
       function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
+        // Création du lecteur pour Partie 1
+        player1 = new YT.Player('player1', {
           height: '315',
           width: '560',
-          videoId: 'Kmews-ePuyc', // Remplace VIDEO_ID par l'identifiant réel de la vidéo
+          videoId: 'Kmews-ePuyc',
           playerVars: {
             'autoplay': 1,
             'controls': 1,
-            'start': t1,
-            'end': t2,
-            'rel': 0 // pour ne pas afficher de vidéos similaires à la fin
+            //'end': t2_player1,   // On retire le paramètre « end » pour gérer le loop manuellement
+            'start': t1_player1,
+            'rel': 0
           },
           events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
+            'onReady': function(e) {
+              e.target.playVideo();
+            },
+            'onStateChange': onPlayer1StateChange
+          }
+        });
+
+        // Création du lecteur pour Partie 2
+        player2 = new YT.Player('player2', {
+          height: '315',
+          width: '560',
+          videoId: 'Kmews-ePuyc',
+          playerVars: {
+            'autoplay': 1,
+            'controls': 1,
+            //'end': t2_player2,
+            'start': t1_player2,
+            'rel': 0
+          },
+          events: {
+            'onReady': function(e) {
+              e.target.playVideo();
+            },
+            'onStateChange': onPlayer2StateChange
           }
         });
       }
 
-      // Quand le joueur est prêt, démarre la vidéo
-      function onPlayerReady(event) {
-        event.target.playVideo();
+      // Gestionnaire d'état pour le lecteur de Partie 1
+      function onPlayer1StateChange(event) {
+        // Si la vidéo joue et qu'aucun interval n'est encore lancé
+        if (event.data === YT.PlayerState.PLAYING && !interval1) {
+          interval1 = setInterval(function() {
+            var currentTime = player1.getCurrentTime();
+            console.log("Partie 1 : currentTime = " + currentTime);
+            if (currentTime >= t2_player1) {
+              player1.seekTo(t1_player1);
+            }
+          }, 100); // Vérification toutes les 100 ms pour plus de précision
+        }
+        // Si la vidéo n'est plus en lecture, on arrête l'intervalle
+        if (event.data !== YT.PlayerState.PLAYING && interval1) {
+          clearInterval(interval1);
+          interval1 = null;
+        }
       }
 
-      // Contrôle de la lecture pour boucler le segment
-      function onPlayerStateChange(event) {
-        if (event.data == YT.PlayerState.PLAYING) {
-          // Vérifie régulièrement l'instant de la vidéo
-          var checkInterval = setInterval(function () {
-            var currentTime = player.getCurrentTime();
-            if (currentTime >= t2) {
-              player.seekTo(t1);
+      // Gestionnaire d'état pour le lecteur de Partie 2
+      function onPlayer2StateChange(event) {
+        if (event.data === YT.PlayerState.PLAYING && !interval2) {
+          interval2 = setInterval(function() {
+            var currentTime = player2.getCurrentTime();
+            console.log("Partie 2 : currentTime = " + currentTime);
+            if (currentTime >= t2_player2) {
+              player2.seekTo(t1_player2);
             }
-          }, 1000); // vérification toutes les 1 seconde
+          }, 100);
+        }
+        if (event.data !== YT.PlayerState.PLAYING && interval2) {
+          clearInterval(interval2);
+          interval2 = null;
         }
       }
     </script>
